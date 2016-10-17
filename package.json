@@ -1,0 +1,36 @@
+{
+  "name": "chunky-dump-reader",
+  "version": "1.0.0",
+  "description": "A tiny util module to read Chunky dumps.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "binary": "^0.3.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "mocha": "^3.1.2",
+    "standard": "^8.4.0"
+  },
+  "scripts": {
+    "test": "standard && mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TeamWertarbyte/chunky-dump-reader.git"
+  },
+  "keywords": [
+    "chunky",
+    "binary",
+    "dump"
+  ],
+  "author": "Wertarbyte",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TeamWertarbyte/chunky-dump-reader/issues"
+  },
+  "homepage": "https://github.com/TeamWertarbyte/chunky-dump-reader#readme"
+}
