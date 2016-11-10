@@ -44,12 +44,13 @@ const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
       renderTime: ws.renderTime
     })
   })
-  dumpStream.on('end', () => {
+  const gzipStream = dumpStream.pipe(zlib.createGunzip())
+  gzipStream.on('end', () => {
     if (!ws.valid) {
       reject(new Error('Invalid dump stream'))
     }
   })
-  dumpStream.pipe(zlib.createGunzip()).pipe(ws)
+  gzipStream.pipe(ws)
 })
 
 module.exports = {
