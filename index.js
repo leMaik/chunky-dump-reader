@@ -9,6 +9,7 @@ function DumpCheckStream (options) {
   Writable.call(this, options)
   this.headerCount = 0
   this.header = []
+  this.bodyCount = 0
 }
 util.inherits(DumpCheckStream, Writable)
 
@@ -19,6 +20,9 @@ DumpCheckStream.prototype._write = function (chunk, enc, cb) {
       this.headerCount += headerPart.length
       this.header.push(headerPart)
     }
+    this.bodyCount += chunk.length - headerPart.length
+  } else {
+    this.bodyCount += chunk.length
   }
 
   if (this.headerCount === expectedHeaderCount && this.width == null && this.height == null) {
@@ -27,13 +31,21 @@ DumpCheckStream.prototype._write = function (chunk, enc, cb) {
     this.height = header.readInt32BE(4)
     this.spp = header.readInt32BE(8)
     this.renderTime = header.readIntBE(12, 8, true)
-    this.valid = true
     this.emit('dump header')
   }
 
   cb()
 }
 
+Object.defineProperty(DumpCheckStream.prototype, 'valid', {
+  get: function () {
+    return this.headerCount === expectedHeaderCount && this.bodyCount === this.width * this.height * 3 * 8
+  }
+})
+
+/**
+ * Reads the dump header.
+ */
 const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
   const ws = new DumpCheckStream()
   ws.on('dump header', () => {
@@ -46,7 +58,28 @@ const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
   })
   const gzipStream = dumpStream.pipe(zlib.createGunzip())
   gzipStream.on('end', () => {
-    if (!ws.valid) {
+    if (ws.headerCount < expectedHeaderCount) {
+      reject(new Error('Invalid dump stream'))
+    }
+  })
+  gzipStream.pipe(ws)
+})
+
+/**
+ * Like `getDumpInfo`, but reads the entire dump to check if its length is correct.
+ */
+const getValidatedDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
+  const ws = new DumpCheckStream()
+  const gzipStream = dumpStream.pipe(zlib.createGunzip())
+  gzipStream.on('end', () => {
+    if (ws.valid) {
+      resolve({
+        width: ws.width,
+        height: ws.height,
+        spp: ws.spp,
+        renderTime: ws.renderTime
+      })
+    } else {
       reject(new Error('Invalid dump stream'))
     }
   })
@@ -54,5 +87,6 @@ const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
 })
 
 module.exports = {
-  getDumpInfo
+  getDumpInfo,
+  getValidatedDumpInfo
 }
