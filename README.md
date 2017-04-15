@@ -1,5 +1,7 @@
 # chunky-dump-reader
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/TeamWertarbyte/chunky-dump-reader.svg)](https://greenkeeper.io/)
+
 This module exposes a function to get width, height, spp and render time from a [Chunky][chunky] render dump stream.
 
 ## Installation
