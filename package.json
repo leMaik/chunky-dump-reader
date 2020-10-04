@@ -29,5 +29,8 @@
   "bugs": {
     "url": "https://github.com/TeamWertarbyte/chunky-dump-reader/issues"
   },
-  "homepage": "https://github.com/TeamWertarbyte/chunky-dump-reader#readme"
+  "homepage": "https://github.com/TeamWertarbyte/chunky-dump-reader#readme",
+  "engines": {
+    "node": ">=10.20.0"
+  }
 }

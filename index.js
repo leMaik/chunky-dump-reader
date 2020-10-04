@@ -30,7 +30,7 @@ DumpCheckStream.prototype._write = function (chunk, enc, cb) {
     this.width = header.readInt32BE(0)
     this.height = header.readInt32BE(4)
     this.spp = header.readInt32BE(8)
-    this.renderTime = header.readIntBE(12, 8, true)
+    this.renderTime = header.readBigInt64BE(12)
     this.emit('dump header')
   }
 
