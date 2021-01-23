@@ -6,6 +6,9 @@
   "directories": {
     "test": "test"
   },
+  "dependencies": {
+    "multistream": "^4.0.1"
+  },
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^8.1.3",

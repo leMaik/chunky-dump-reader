@@ -33,6 +33,15 @@ describe('getDumpInfo', () => {
     expect(spp).to.equal(100)
     expect(renderTime).to.equal(2792n)
   })
+
+  it('should read information of valid render dumps in the new format', async () => {
+    const rs = fs.createReadStream(path.join(__dirname, 'valid-new.dump'))
+    const { width, height, spp, renderTime } = await getDumpInfo(rs)
+    expect(width).to.equal(50)
+    expect(height).to.equal(50)
+    expect(spp).to.equal(100)
+    expect(renderTime).to.equal(1950n)
+  })
 })
 
 describe('getValidatedDumpInfo', () => {

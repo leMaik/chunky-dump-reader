@@ -1,6 +1,7 @@
 const util = require('util')
-const { Writable } = require('stream')
+const { Writable, PassThrough } = require('stream')
 const zlib = require('zlib')
+const MultiStream = require('multistream')
 
 // width (int32bs), height (int32bs), spp (int32bs), renderTime (int64bs)
 const expectedHeaderCount = 4 + 4 + 4 + 8
@@ -46,7 +47,7 @@ Object.defineProperty(DumpCheckStream.prototype, 'valid', {
 /**
  * Reads the dump header.
  */
-const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
+const getDumpInfoOld = (dumpStream) => new Promise((resolve, reject) => {
   const ws = new DumpCheckStream()
   ws.on('dump header', () => {
     resolve({
@@ -64,6 +65,65 @@ const getDumpInfo = (dumpStream) => new Promise((resolve, reject) => {
   })
   gzipStream.pipe(ws)
 })
+const getDumpInfoNew = (dumpStream) => new Promise((resolve, reject) => {
+  const ws = new DumpCheckStream()
+  ws.on('dump header', () => {
+    resolve({
+      width: ws.width,
+      height: ws.height,
+      spp: ws.spp,
+      renderTime: ws.renderTime
+    })
+  })
+  dumpStream.pipe(ws)
+})
+
+function waitFor (obj, event) {
+  return new Promise((resolve, reject) => {
+    obj.once(event, (err, data) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(data)
+      }
+    })
+  })
+}
+
+async function readUntilSuccess (stream, size) {
+  const endStreamCallbcak = () => { throw new Error('Invalid dump stream') }
+  stream.on('end', endStreamCallbcak)
+
+  let content = stream.read(size)
+  while (content === null) {
+    await waitFor(stream, 'readable')
+    content = stream.read(size)
+  }
+
+  stream.off('end', endStreamCallbcak)
+
+  return content
+}
+
+const getDumpInfo = async (dumpStream) => {
+  const magicNumber = await readUntilSuccess(dumpStream, 4)
+  if (magicNumber.toString() === 'DUMP') {
+    const versionBuf = await readUntilSuccess(dumpStream, 4)
+    const version = versionBuf.readInt32BE(0)
+    if (version === 1) {
+      return await getDumpInfoNew(dumpStream)
+    } else {
+      throw new Error('Unknown dump version')
+    }
+  } else {
+    const magicNumberStream = PassThrough()
+    magicNumberStream.end(magicNumber)
+    // Build a stream with the same content as the original dumpStream
+    // by chaining a small stream from the buffer and the rest of the dumpStream
+    const originalStream = new MultiStream([magicNumberStream, dumpStream])
+    return await getDumpInfoOld(originalStream)
+  }
+}
 
 /**
  * Like `getDumpInfo`, but reads the entire dump to check if its length is correct.
